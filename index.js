@@ -26,7 +26,7 @@ async function fetchWithParallelRace(url, options = {}, numParallel = 1, maxWave
       const res = await Promise.any(attempts);
       return res;
     } catch (err) {
-      console.warn(`Wave #${wave}: Все параллельные попытки неудачны (${numParallel})`);
+      console.warn(`Wave #${wave}: Все параллельные попытки неудачны (${numParallel})`, err);
       if (wave < maxWaves) await new Promise(r => setTimeout(r, delayMs));
     }
   }
