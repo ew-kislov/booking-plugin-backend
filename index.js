@@ -18,7 +18,13 @@ async function fetchWithParallelRace(url, options = {}, numParallel = 1, maxWave
     for (let i = 0; i < numParallel; i++) {
       attempts.push(
         fetch(url, options)
-          .then(res => [200, 201, 202, 203, 204].includes(res.status) ? res : Promise.reject(new Error(`Non-2xx: ${res.status}`)))
+          .then(async res => {
+            if (res.status === 200) {
+              return res;
+            }
+            const text = await res.text()
+            return Promise.reject(new Error(`Non-200: ${res.status}, text: ${text}`))
+          })
       );
     }
     try {
@@ -37,14 +43,7 @@ async function fetchWithParallelRace(url, options = {}, numParallel = 1, maxWave
 async function getReviewsPages(country, hotel, options = {}) {
   let sessionCookie = null;
   const initialReviews = `https://www.booking.com/reviewlist.ru.html?cc1=${country}&dist=1&pagename=${hotel}&offset=0&rows=10`;
-  const res = await fetchWithParallelRace(initialReviews, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Connection': 'keep-alive',
-    },
-  });
+  const res = await fetchWithParallelRace(initialReviews, {});
   // Извлечение set-cookie
   const setCookieArr = res.headers.raw()['set-cookie'] || [];
   if (setCookieArr.length) {
@@ -62,7 +61,7 @@ async function getReviewsPages(country, hotel, options = {}) {
   const $ = cheerio.load(html);
   const paginationItems = $('a.bui-pagination__link');
   if (paginationItems.length === 0) {
-    fs.writeFileSync(__dirname + '/last_pagination_fail.html', html);
+    console.warn('Could not get pages count')
     return { pages: 10, sessionCookie };
   }
   const last = paginationItems.last();
@@ -81,16 +80,16 @@ async function getReviews(country, hotel, pages, sessionCookie) {
 async function getReviewsPage(country, hotel, page, sessionCookie) {
   const initialReviews = `https://www.booking.com/reviewlist.en.html?cc1=${country}&dist=1&pagename=${hotel}&offset=${(page - 1) * 10}&rows=10&lang=en&translated=1&hl=en`;
   try {
-    const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Connection': 'keep-alive',
-    };
-    if (sessionCookie) headers['Cookie'] = sessionCookie;
-    const res = await fetchWithParallelRace(initialReviews, {
-      headers,
-    });
+    let options = {};
+
+    if (sessionCookie) {
+      options = {
+        headers: {
+          'Cookie': sessionCookie
+        }
+      }
+    }
+    const res = await fetchWithParallelRace(initialReviews, options);
     const html = await res.text();
     const $ = cheerio.load(html);
     const reviewBlocks = $('div.c-review');
