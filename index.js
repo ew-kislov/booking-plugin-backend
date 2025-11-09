@@ -18,7 +18,7 @@ async function fetchWithParallelRace(url, options = {}, numParallel = 1, maxWave
     for (let i = 0; i < numParallel; i++) {
       attempts.push(
         fetch(url, options)
-          .then(res => res.status === 200 ? res : Promise.reject(new Error(`Non-200: ${res.status}`)))
+          .then(res => [200, 201, 202, 203, 204].includes(res.status) ? res : Promise.reject(new Error(`Non-2xx: ${res.status}`)))
       );
     }
     try {
