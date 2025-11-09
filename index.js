@@ -41,9 +41,25 @@ async function fetchWithParallelRace(url, options = {}, numParallel = 1, maxWave
 
 // getReviewsPages теперь принимает дополнительный объект options с возможностью собрать cookies.
 async function getReviewsPages(country, hotel, options = {}) {
+  const startingCookie = 'bkng=11UmFuZG9tSVYkc2RlIyh9YXSgTtYpR%2F1WOjMvuuinviHpTjZODTQ2m94qMqNLx28H3CDcPZ6t%2BqcwAvcVWfxPVoX3GBR4cm5OFd8R6tW3DKgDWCSr%2BqePtIRK70xZajbXvsU8ypLuV%2FxwjZpc%2Bmuo1qy81doFQ8MEE04gq5Qo5OA8RwnE3ajhqc4WiYJZ9wseiUEF0EzJVUfdrE1X%2FvO8lw%3D%3D; bkng_sso_auth=CAIQm8CWywYaZqMzUHFKjEZvGbR2Os5FkHxueFkRMfF0/apoL37zYnPBs/1gGJboawx0VTuDZuWW5hm+YMIsEBRh7TCd/rQ3WoV3qB2bX8lIOb5EpBSwJEHFj+4khVUdOn0Ptt/tYRlzM04EE/WDuQ==; bkng_sso_auth=CAIQm8CWywYaZmashFyj34nIpQP/BlTXftdTTXfjx0ZVLsd/NHsukcCw3XdOa4jlDZhrMLPLdSGzi4tPWTBxgQpGqR7P4JlQBaX9wI0lHYTccc9u5BGS3+wThZtfbRmEg7/zXFvMGWmBmFMuYULT8Q==; pcm_consent=analytical%3Dfalse%26countryCode%3DAT%26consentId%3Dc8cffa41-1595-4c16-a75c-4e73f4f29c33%26consentedAt%3D2025-10-08T22%3A46%3A02.645Z%26expiresAt%3D2026-04-06T22%3A46%3A02.645Z%26implicit%3Dtrue%26marketing%3Dfalse%26regionCode%3D9%26regulation%3Dgdpr%26legacyRegulation%3Dgdpr'
+
+  const sample = await fetch('https://api.sampleapis.com/coffee/hot');
+  console.log('Sample http request status - ' + sample.status)
+
+  let sampleBooking = await fetch('https://booking.com', {
+    headers: {
+      'Cookie': startingCookie
+    }
+  });
+  console.log('Sample http BOOKING request status - ' + sampleBooking.status)
+
   let sessionCookie = null;
   const initialReviews = `https://www.booking.com/reviewlist.ru.html?cc1=${country}&dist=1&pagename=${hotel}&offset=0&rows=10`;
-  const res = await fetchWithParallelRace(initialReviews, {});
+  const res = await fetchWithParallelRace(initialReviews, {
+    headers: {
+      'Cookie': startingCookie
+    }
+  });
   // Извлечение set-cookie
   const setCookieArr = res.headers.raw()['set-cookie'] || [];
   if (setCookieArr.length) {
