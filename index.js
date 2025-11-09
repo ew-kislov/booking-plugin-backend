@@ -56,6 +56,7 @@ async function getReviewsPages(country, hotel, options = {}) {
     }
   });
   console.log('Sample http BOOKING request status - ' + sampleBooking.status)
+  console.log(sampleBooking.headers)
 
   let sessionCookie = null;
   const initialReviews = `https://www.booking.com/reviewlist.ru.html?cc1=${country}&dist=1&pagename=${hotel}&offset=0&rows=10`;
